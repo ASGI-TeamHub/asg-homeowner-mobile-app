@@ -20,6 +20,16 @@ export interface NotificationPreferences {
   marketing_emails: boolean;
 }
 
+export interface AppNotification {
+  id: string;
+  type: string;
+  title: string;
+  body: string;
+  read: boolean;
+  created_at: string;
+  action_url?: string;
+}
+
 export interface SolarSite {
   id: string;
   reference: string;
@@ -29,24 +39,16 @@ export interface SolarSite {
   inverter_type: string;
   orientation: 'south' | 'south-east' | 'south-west' | 'east' | 'west';
   tilt_angle: number;
-  
-  // Real-time generation
   current_generation_kw: number;
   today_generation_kwh: number;
   monthly_generation_kwh: number;
   yearly_generation_kwh: number;
-  
-  // FIT payments
   fit_rate_per_kwh: number;
   export_rate_per_kwh: number;
   estimated_monthly_payment: number;
-  
-  // System health
   system_health: 'good' | 'warning' | 'error' | 'offline';
   last_reading_date: string;
   consecutive_zero_reads: number;
-  
-  // Weather context
   current_weather: WeatherData;
 }
 
@@ -91,21 +93,15 @@ export interface MaintenanceBooking {
   time_slot: 'morning' | 'afternoon' | 'all_day';
   status: 'scheduled' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled';
   priority: 'routine' | 'urgent' | 'emergency';
-  
-  // Service details
   technician_name?: string;
   estimated_duration_hours: number;
   service_description: string;
   special_requirements?: string;
-  
-  // Completion details
   work_completed?: string;
   parts_replaced?: string[];
   follow_up_required?: boolean;
   customer_rating?: number;
   customer_feedback?: string;
-  
-  // Documentation
   before_photos?: string[];
   after_photos?: string[];
   service_report_url?: string;
@@ -151,7 +147,6 @@ export interface BatteryQuote {
   model: string;
 }
 
-// Navigation types
 export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
@@ -170,12 +165,11 @@ export type AuthStackParamList = {
   SiteVerification: undefined;
 };
 
-// API response types
 export interface ApiResponse<T> {
   success: boolean;
   data: T;
   message?: string;
-  errors?: string[];
+  errors?: Array<{ field: string; message: string }>;
 }
 
 export interface PaginatedResponse<T> {
@@ -185,7 +179,6 @@ export interface PaginatedResponse<T> {
   previous: string | null;
 }
 
-// Auth types
 export interface LoginCredentials {
   site_reference: string;
   postcode: string;
@@ -196,14 +189,6 @@ export interface AuthToken {
   access: string;
   refresh: string;
   expires_at: number;
-}
-
-// Redux store types
-export interface RootState {
-  auth: AuthState;
-  solar: SolarState;
-  maintenance: MaintenanceState;
-  notifications: NotificationState;
 }
 
 export interface AuthState {
@@ -234,7 +219,7 @@ export interface MaintenanceState {
 }
 
 export interface NotificationState {
-  notifications: PerformanceAlert[];
+  notifications: AppNotification[];
   unreadCount: number;
   pushToken: string | null;
   preferences: NotificationPreferences;

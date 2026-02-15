@@ -52,6 +52,8 @@
       ]
     ],
     "extra": {
+      "apiBaseUrl": "https://lux.ashadegreener.co.uk/api/v1",
+      "supportPhone": "0800 0000 000",
       "eas": {
         "projectId": "asg-homeowner-solar-app"
       }

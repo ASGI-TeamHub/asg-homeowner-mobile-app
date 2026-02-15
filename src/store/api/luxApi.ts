@@ -1,42 +1,86 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { BaseQueryFn, FetchArgs, FetchBaseQueryError, createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import Constants from 'expo-constants';
 import { RootState } from '../index';
+import { logout, refreshTokenSuccess } from '../slices/authSlice';
 import {
-  User,
-  SolarSite,
-  GenerationHistory,
-  FITPayment,
-  MaintenanceBooking,
-  ServiceHistory,
-  PerformanceAlert,
-  BatteryQuote,
   ApiResponse,
-  PaginatedResponse,
-  LoginCredentials,
   AuthToken,
+  BatteryQuote,
+  FITPayment,
+  GenerationHistory,
+  LoginCredentials,
+  MaintenanceBooking,
+  NotificationPreferences,
+  PaginatedResponse,
+  PerformanceAlert,
+  ServiceHistory,
+  SolarSite,
+  User,
 } from '../../types';
+import { clearTokens, getTokens, storeTokens } from '../../services/auth/tokenStorage';
 
-// Base URL for Lux API - will be environment-specific
-const LUX_API_BASE_URL = __DEV__ 
-  ? 'http://10.75.0.49:8000/api/v1' 
-  : 'https://lux.ashadegreener.co.uk/api/v1';
+const configuredBaseUrl = Constants.expoConfig?.extra?.apiBaseUrl as string | undefined;
+const LUX_API_BASE_URL = configuredBaseUrl || (__DEV__
+  ? 'http://localhost:8000/api/v1'
+  : 'https://lux.ashadegreener.co.uk/api/v1');
+
+const rawBaseQuery = fetchBaseQuery({
+  baseUrl: `${LUX_API_BASE_URL}/mobile`,
+  prepareHeaders: (headers, { getState }) => {
+    const token = (getState() as RootState).auth.token?.access;
+    if (token) {
+      headers.set('authorization', `Bearer ${token}`);
+    }
+    return headers;
+  },
+});
+
+const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (
+  args,
+  api,
+  extraOptions,
+) => {
+  let result = await rawBaseQuery(args, api, extraOptions);
+
+  if (result.error?.status === 401) {
+    const refresh = (api.getState() as RootState).auth.token?.refresh || (await getTokens())?.refresh;
+
+    if (refresh) {
+      const refreshResult = await rawBaseQuery(
+        {
+          url: '/auth/refresh',
+          method: 'POST',
+          body: { refresh },
+        },
+        api,
+        extraOptions,
+      );
+
+      if (refreshResult.data) {
+        const payload = refreshResult.data as ApiResponse<AuthToken>;
+        if (payload.data?.access) {
+          api.dispatch(refreshTokenSuccess(payload.data));
+          await storeTokens(payload.data);
+          result = await rawBaseQuery(args, api, extraOptions);
+        }
+      } else {
+        await clearTokens();
+        api.dispatch(logout());
+      }
+    } else {
+      await clearTokens();
+      api.dispatch(logout());
+    }
+  }
+
+  return result;
+};
 
 export const luxApi = createApi({
   reducerPath: 'luxApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${LUX_API_BASE_URL}/mobile`,
-    prepareHeaders: (headers, { getState }) => {
-      const token = (getState() as RootState).auth.token?.access;
-      if (token) {
-        headers.set('authorization', `Bearer ${token}`);
-      }
-      headers.set('content-type', 'application/json');
-      return headers;
-    },
-  }),
+  baseQuery: baseQueryWithReauth,
   tagTypes: ['User', 'Site', 'Generation', 'FIT', 'Maintenance', 'Notifications'],
   endpoints: (builder) => ({
-    
-    // Authentication endpoints
     login: builder.mutation<ApiResponse<{ user: User; token: AuthToken }>, LoginCredentials>({
       query: (credentials) => ({
         url: '/auth/login',
@@ -62,7 +106,6 @@ export const luxApi = createApi({
       }),
     }),
 
-    // User profile endpoints
     getUserProfile: builder.query<ApiResponse<User>, void>({
       query: () => '/user/profile',
       providesTags: ['User'],
@@ -77,7 +120,6 @@ export const luxApi = createApi({
       invalidatesTags: ['User'],
     }),
 
-    // Solar site endpoints
     getSiteData: builder.query<ApiResponse<SolarSite>, string>({
       query: (siteId) => `/sites/${siteId}/dashboard`,
       providesTags: ['Site'],
@@ -85,8 +127,6 @@ export const luxApi = createApi({
 
     getLiveGeneration: builder.query<ApiResponse<{ current_kw: number; today_kwh: number }>, string>({
       query: (siteId) => `/sites/${siteId}/generation/live`,
-      // Poll every 30 seconds for live data
-      pollingInterval: 30000,
     }),
 
     getGenerationHistory: builder.query<ApiResponse<GenerationHistory[]>, { siteId: string; period: 'week' | 'month' | 'year' }>({
@@ -104,7 +144,6 @@ export const luxApi = createApi({
       providesTags: ['Notifications'],
     }),
 
-    // Maintenance endpoints
     getMaintenanceBookings: builder.query<ApiResponse<MaintenanceBooking[]>, string>({
       query: (siteId) => `/sites/${siteId}/maintenance/bookings`,
       providesTags: ['Maintenance'],
@@ -126,10 +165,15 @@ export const luxApi = createApi({
       timeSlot: string;
       specialRequirements?: string;
     }>({
-      query: ({ siteId, ...bookingData }) => ({
+      query: ({ siteId, serviceType, appointmentDate, timeSlot, specialRequirements }) => ({
         url: `/sites/${siteId}/maintenance/book`,
         method: 'POST',
-        body: bookingData,
+        body: {
+          service_type: serviceType,
+          appointment_date: appointmentDate,
+          time_slot: timeSlot,
+          special_requirements: specialRequirements,
+        },
       }),
       invalidatesTags: ['Maintenance'],
     }),
@@ -142,7 +186,6 @@ export const luxApi = createApi({
         url: `/maintenance/${bookingId}/upload-photo`,
         method: 'POST',
         body: photo,
-        formData: true,
       }),
     }),
 
@@ -154,9 +197,8 @@ export const luxApi = createApi({
       invalidatesTags: ['Maintenance'],
     }),
 
-    // Battery and upsell endpoints
     getBatteryQuote: builder.query<ApiResponse<BatteryQuote>, { siteId: string; usage_pattern: 'low' | 'medium' | 'high' }>({
-      query: ({ siteId, usage_pattern }) => `/sites/${siteId}/battery-quote?usage=${usage_pattern}`,
+      query: ({ siteId, usage_pattern }) => `/sites/${siteId}/battery-quote?usage_pattern=${usage_pattern}`,
     }),
 
     requestBatteryConsultation: builder.mutation<ApiResponse<{ success: boolean }>, {
@@ -171,7 +213,6 @@ export const luxApi = createApi({
       }),
     }),
 
-    // Notification endpoints
     registerPushToken: builder.mutation<ApiResponse<{ success: boolean }>, {
       device_id: string;
       push_token: string;
@@ -184,13 +225,7 @@ export const luxApi = createApi({
       }),
     }),
 
-    updateNotificationPreferences: builder.mutation<ApiResponse<{ success: boolean }>, {
-      maintenance_reminders: boolean;
-      performance_alerts: boolean;
-      payment_notifications: boolean;
-      system_updates: boolean;
-      marketing_emails: boolean;
-    }>({
+    updateNotificationPreferences: builder.mutation<ApiResponse<{ success: boolean }>, NotificationPreferences>({
       query: (preferences) => ({
         url: '/notifications/preferences',
         method: 'PUT',
@@ -206,41 +241,28 @@ export const luxApi = createApi({
       }),
       invalidatesTags: ['Notifications'],
     }),
-
   }),
 });
 
-// Export hooks for use in components
 export const {
-  // Auth
   useLoginMutation,
   useRefreshTokenMutation,
   useSetupBiometricsMutation,
-  
-  // User
   useGetUserProfileQuery,
   useUpdateUserProfileMutation,
-  
-  // Solar data
   useGetSiteDataQuery,
   useGetLiveGenerationQuery,
   useGetGenerationHistoryQuery,
   useGetFITPaymentsQuery,
   useGetPerformanceAlertsQuery,
-  
-  // Maintenance
   useGetMaintenanceBookingsQuery,
   useGetServiceHistoryQuery,
   useGetAvailableSlotsQuery,
   useBookMaintenanceMutation,
   useUploadMaintenancePhotoMutation,
   useCancelBookingMutation,
-  
-  // Battery/Upsell
   useGetBatteryQuoteQuery,
   useRequestBatteryConsultationMutation,
-  
-  // Notifications
   useRegisterPushTokenMutation,
   useUpdateNotificationPreferencesMutation,
   useMarkNotificationReadMutation,
