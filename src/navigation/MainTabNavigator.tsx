@@ -12,7 +12,6 @@ import SettingsScreen from '../screens/Settings/SettingsScreen';
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 const ASG_BLUE = '#003d82';
-const ASG_LIGHT_BLUE = '#4a90c2';
 const GRAY = '#8e8e93';
 
 export default function MainTabNavigator() {
