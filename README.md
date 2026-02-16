@@ -2,7 +2,7 @@
 
 A React Native mobile application for 70,000 A Shade Greener homeowners to monitor solar generation, track FIT payments, and manage maintenance services.
 
-## 🎯 Project Overview
+## Project Overview
 
 ### Target Market
 - **Users:** 70,000 existing ASG homeowners with solar installations
@@ -16,7 +16,7 @@ A React Native mobile application for 70,000 A Shade Greener homeowners to monit
 - **Performance Alerts:** Proactive system health notifications
 - **Battery Upselling:** ROI calculator and consultation booking
 
-## 🏗️ Technical Architecture
+##  Technical Architecture
 
 ### Frontend Stack
 - **React Native 0.73** with TypeScript
@@ -48,7 +48,7 @@ A React Native mobile application for 70,000 A Shade Greener homeowners to monit
 }
 ```
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Prerequisites
 - Node.js 18+ 
@@ -94,7 +94,7 @@ APP_VERSION=1.0.0
 BUILD_NUMBER=1
 ```
 
-## 📱 App Structure
+##  App Structure
 
 ### Screen Architecture
 ```
@@ -129,7 +129,7 @@ Main Tab Navigator:
 - **PerformanceAlerts:** Critical system alerts and actions
 - **MaintenanceBookingForm:** Service appointment scheduling
 
-## 🔌 API Integration
+##  API Integration
 
 ### New Lux API Endpoints Required
 
@@ -166,7 +166,7 @@ Key TypeScript interfaces in `src/types/index.ts`:
 - `MaintenanceBooking` - Service appointments
 - `PerformanceAlert` - System health notifications
 
-## 🔒 Authentication & Security
+##  Authentication & Security
 
 ### Auth Flow
 1. **Login:** Site reference + postcode verification
@@ -180,7 +180,7 @@ Key TypeScript interfaces in `src/types/index.ts`:
 - **Token Rotation:** Short-lived access tokens
 - **Data Encryption:** All API communication over HTTPS
 
-## 📊 Performance & Monitoring
+## Performance & Monitoring
 
 ### Optimization Strategy
 - **Code Splitting:** Lazy load non-critical screens
@@ -194,7 +194,7 @@ Key TypeScript interfaces in `src/types/index.ts`:
 - **Custom Metrics:** Solar generation data usage patterns
 - **Performance Monitoring:** Screen load times and API response
 
-## 🚀 Deployment
+## Deployment
 
 ### Build Configuration
 ```bash
@@ -222,7 +222,7 @@ eas submit --platform android
 3. **Regional Release:** Yorkshire/Northern regions first
 4. **National Launch:** All 70,000 homeowners
 
-## 📈 Success Metrics
+## Success Metrics
 
 ### Adoption Targets
 - **Downloads:** 30,000 in first month (43% of homeowners)
@@ -236,7 +236,7 @@ eas submit --platform android
 - **Customer Satisfaction:** 4.5+ app store rating
 - **Revenue Generation:** £500k annual revenue from premium features
 
-## 🛠️ Development Workflow
+##  Development Workflow
 
 ### Code Quality
 - **TypeScript:** Strict type checking enabled
@@ -251,7 +251,7 @@ eas submit --platform android
 - **CodePush:** Over-the-air updates for React Native
 - **App Center:** Crash analytics and distribution
 
-## 📞 Support & Maintenance
+##  Support & Maintenance
 
 ### Customer Support Integration
 - **In-App Chat:** Direct connection to ASG support team
@@ -267,7 +267,7 @@ eas submit --platform android
 
 ---
 
-## 🎉 Launch Readiness
+##  Launch Readiness
 
 This app is **production-ready** for immediate deployment to ASG's 70,000 homeowners. 
 
