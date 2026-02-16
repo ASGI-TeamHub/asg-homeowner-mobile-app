@@ -128,7 +128,6 @@ Main Tab Navigator:
 - **SystemHealthIndicator:** Red/amber/green system status
 - **PerformanceAlerts:** Critical system alerts and actions
 - **MaintenanceBookingForm:** Service appointment scheduling
-- **FITPaymentHistory:** Payment tracking with export functionality
 
 ## 🔌 API Integration
 
